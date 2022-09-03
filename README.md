@@ -1,10 +1,19 @@
 # ProvkinTZ
-Тестовое задание
+<<<<<<< HEAD
+Тестовое задание  
 
-## Запуск
-python manage.py runserver 0.0.0.0:8000
+# Запуск
+Для версии docker-compose < 2:  
+docker-compose up  
 
-## Страница с api
-http://localhost:8000/api/
+Для версии docker-compose > 2:  
+docker compose up  
 
-## В админке отображаются загруженные данные
+# Проверка
+Перейти по следующему url:  
+http://provkin.localhost
+
+В endpoiunt upload загрузить файл bills.csv  
+В endpoiunt bills просмотреть результат  
+
+Так же можно посмотреть результат загрузки в админке, нужно только не забыть создать суперюзера

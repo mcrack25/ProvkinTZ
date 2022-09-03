@@ -1,0 +1,10 @@
+.DS_Store
+.data/
+.env
+.idea/
+.vscode/
+.devcontainer/
+__pycache__/
+staticfiles/
+media/
+node_modules/
