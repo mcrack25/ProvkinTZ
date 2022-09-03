@@ -1,10 +1,12 @@
-from django.views.generic import TemplateView
-from rest_framework.viewsets import ViewSet, ReadOnlyModelViewSet
-from rest_framework.response import Response
-from .serializers import UploadSerializer, BillSerializer
 import datetime
-from .models import Organization, Client, Service, Bill
+
+from django.views.generic import TemplateView
+from rest_framework.response import Response
+from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
+
 from .filters import BillFilterSet
+from .models import Bill, Client, Organization, Service
+from .serializers import BillSerializer, UploadSerializer
 
 
 class BillViewSet(ReadOnlyModelViewSet):
@@ -57,7 +59,7 @@ class UploadViewSet(ViewSet):
                     try:
                         fields = line.split(",")
                         data = self.get_data(fields)
-                        self.validate_data(fields)
+                        self.validate_data(data)
                         self.upload_data(data)
                     except ValueError:
                         pass
