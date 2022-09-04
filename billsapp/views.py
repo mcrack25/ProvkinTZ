@@ -1,6 +1,6 @@
 import datetime
 
-from django.views.generic import TemplateView
+from django.db import transaction
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
@@ -35,18 +35,41 @@ class UploadViewSet(ViewSet):
             'service': fields[5].strip(),
         }
 
-    def upload_data(self, data):
-        service, _ = Service.objects.get_or_create(name=data.get('service'))
-        organization, _ = Organization.objects.get_or_create(name=data.get('client_org'))
-        client, _ = Client.objects.get_or_create(name=data.get('client_name'))
-        Bill.objects.get_or_create(
-            client=client,
-            organization=organization,
-            service=service,
-            num=data.get('num'),
-            sum=data.get('sum'),
-            date=data.get('date'),
-        )
+    def upload_data(self, items):
+        bills = []
+        with transaction.atomic():
+            for item in items:
+                service, _ = Service.objects.get_or_create(name=item.get('service'))
+                organization, _ = Organization.objects.get_or_create(name=item.get('client_org'))
+                client, _ = Client.objects.get_or_create(name=item.get('client_name'))
+                bills.append(
+                    Bill(
+                        client=client,
+                        organization=organization,
+                        service=service,
+                        num=item.get('num'),
+                        sum=item.get('sum'),
+                        date=item.get('date'),
+                    )
+                )
+            Bill.objects.bulk_create(bills, ignore_conflicts=True)
+
+    def is_valid(self, line):
+        try:
+            fields = line.strip().split(",")
+            int(fields[2].strip())
+            float(fields[3].strip())
+            datetime.datetime.strptime(fields[4].strip(), "%d.%m.%Y").date()
+            return True
+        except ValueError:
+            return False
+
+    def filter_data(self, lines):
+        return [
+            self.get_data(line.split(","))
+            for line in lines[1:]
+            if self.is_valid(line)
+        ]
 
     def create(self, request):
         file_uploaded = request.FILES.get('file_uploaded')
@@ -54,15 +77,8 @@ class UploadViewSet(ViewSet):
         if content_type == 'text/csv':
             file_data = file_uploaded.file.read().decode("utf-8")
             lines = file_data.split("\n")
-            for index, line in enumerate(lines):
-                if index > 0:
-                    try:
-                        fields = line.split(",")
-                        data = self.get_data(fields)
-                        self.validate_data(data)
-                        self.upload_data(data)
-                    except ValueError:
-                        pass
+            data = self.filter_data(lines)
+            self.upload_data(data)
 
         response = "POST API and you have uploaded a {} file".format(content_type)
         return Response(response)
